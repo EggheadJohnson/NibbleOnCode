@@ -1,0 +1,17 @@
+<div class="test-show-boxes hidden-sm hidden-xs col-md-2" ng-if="!blogView">
+	<h3> Topics </h3>
+	<p> <div ng-click="changeTagSeclect('')"><span ng-if="tagSelected === ''">&bull;</span><b> All </b> ({{blogsLength}}) </div> </p>
+	<div ng-repeat="tag in tagsKeys | limitTo:tagsLimit">
+		<p> <div ng-click="changeTagSeclect(tag)"><span ng-if="tagSelected === tag">&bull;</span><b> {{tag}} </b> ({{tagsHash[tag]}}) </div> </p>
+	</div>
+	<div ng-click="addMoreTags()" ng-if="tagsLimit < tagsKeys.length">+More</div>
+
+</div>
+
+<div class="test-show-boxes hidden-sm hidden-xs col-md-2" ng-if="blogView">
+	<h3> Topics </h3>
+	<div ng-repeat="tag in tagsKeys">
+		<p> <div ><b> {{tag}} </b> </div> </p>
+	</div>
+
+</div>

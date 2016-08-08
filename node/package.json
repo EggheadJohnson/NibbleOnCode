@@ -1,0 +1,33 @@
+{
+  "name": "babymagic-node",
+  "version": "1.0.0",
+  "description": "BabyMagic Node Repo",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Paul Johnson",
+  "dependencies": {
+    "body-parser": "^1.14.2",
+    "express": "^4.13.3",
+    "kerberos": "0.0.18",
+    "mongodb": "~2.0",
+    "request": "^2.67.0",
+    "mysql": "^2.10.2",
+    "http-server": "^0.6.1",
+    "ioredis": "~2.2.0"
+  },
+  "devDependencies": {
+    "request-debug": "^0.2.0"
+  },
+
+  "scripts": {
+
+    "prestart": "npm install",
+    "start": "http-server ../ -a 0.0.0.0 -p 8000 -c-1"
+
+  }
+}
+
+
+
