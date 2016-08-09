@@ -9,7 +9,118 @@ var nibbleOnCode = angular.module('nibbleOnCode', [
 
 nibbleOnCode.controller('nocCtl', ['$scope', function($scope) {
 }]);
-nibbleOnCode.controller('nocHomeContentCtl', [function() {
+nibbleOnCode.controller('nocExperimentCtl', ['$q', '$scope', 'nibbleOnCodeSvc', function($q, $scope, nibbleOnCodeSvc) {
+	var runTest,
+		runMongoOpt,
+		runNodeOpt,
+		runNgOpt,
+		tot,
+		testObj;
+
+	runMongoOpt = function() {
+		var start = Date.now(),
+			end,
+			tagsHash,
+			tagsKeys;
+		return nibbleOnCodeSvc.getTags().then(function(response){
+
+			tagsHash = nibbleOnCodeSvc.fetchTags();
+			tagsKeys = Object.keys(tagsHash).sort(function(a, b){
+				return tagsHash[b]-tagsHash[a];
+			});
+
+			end = Date.now();
+			return end-start;
+			
+		});
+	}
+
+	runNodeOpt = function() {
+		var start = Date.now(),
+			end,
+			tagsHash,
+			tagsKeys;
+
+		return nibbleOnCodeSvc.getTags2().then(function(response){
+			tagsHash = nibbleOnCodeSvc.fetchTags();
+			tagsKeys = Object.keys(tagsHash).sort(function(a, b){
+				return tagsHash[b]-tagsHash[a];
+			});
+			end = Date.now();
+			return end-start;
+		});
+	}
+
+	runNgOpt = function() {
+		var start = Date.now(),
+			end,
+			blogs,
+			tags = [],
+			tagsHash = {},
+			tagsKeys;
+
+		return nibbleOnCodeSvc.getBlogs().then(function(response){
+			
+
+			blogs = nibbleOnCodeSvc.fetchBlogs();
+			blogs.forEach(function(blog){
+				tags = tags.concat(blog.tags);
+			});
+			tags.forEach(function(tag){
+				if (tagsHash[tag]) tagsHash[tag] += 1;
+				else tagsHash[tag] = 1;
+			})
+
+
+			tagsKeys = Object.keys(tagsHash).sort(function(a, b){
+				return tagsHash[b]-tagsHash[a];
+			});
+			end = Date.now();
+			return end-start;
+		});
+	}
+
+	runTest = function(runs, callback) {
+		var res = 0,
+			promises = [];
+		runs = runs || 1000;
+		
+
+		return $q(function(resolve){
+			for (var i = 0; i < runs; i++){
+				promises.push(callback());
+			}
+			$q.all(promises).then(function(results){
+				resolve(results.reduce(function(prev, curr){
+					return prev+curr;
+				}));
+			});
+		});
+
+
+	}
+	$scope.runs = 5;
+	$scope.runATest = function(whichTest){
+		console.log($scope.runs);
+		runTest($scope.runs, testObj[whichTest]).then(function(result){
+			$scope[whichTest] = result;
+		});
+	}
+	$scope.redisKey = "";
+	$scope.validateRedis = function(redisKey){
+		nibbleOnCodeSvc.validateRedis(redisKey).then(function(result){
+			$scope.validRedisKey = true;
+		}, function(error){
+		});
+	}
+
+	testObj = {
+		'mongoRes': runMongoOpt,
+		'nodeRes': runNodeOpt,
+		'angularRes': runNgOpt
+	}
+
+
 }]);
 nibbleOnCode.controller('nocHomeBlargCtl', [function() {
 }]);
@@ -112,10 +223,15 @@ nibbleOnCode.config(['$routeProvider', '$stateProvider', '$urlRouterProvider', f
 				}
 			}
 		})
+		.state('experiment', {
+			url: '/experiment',
+			templateUrl: 'views/experiment.html',
+			controller: 'nocExperimentCtl'
+		})
 		
 }]);
 
-nibbleOnCode.factory('nibbleOnCodeSvc', ['$resource', function($resource){
+nibbleOnCode.factory('nibbleOnCodeSvc', ['$resource', '$http', function($resource, $httpProvider){
 
 		
 	var blogs,
@@ -125,6 +241,8 @@ nibbleOnCode.factory('nibbleOnCodeSvc', ['$resource', function($resource){
 		//Async functions
 		getBlogs,
 		getTags,
+		getTags2,
+		validateRedis,
 		//Sync functions
 		fetchBlogs,
 		fetchTags,
@@ -149,6 +267,31 @@ nibbleOnCode.factory('nibbleOnCodeSvc', ['$resource', function($resource){
 		
 		}).$promise;
 	}
+	getTags2 = function(filename) {
+		filename = filename || '';
+		tagSource = $resource('http://162.243.145.82:3000/node/getTags2/'+filename);
+		return tagSource.get(function(response){
+			tags = response.data;
+
+		
+		}).$promise;
+	}
+	validateRedis = function(redisKey) {
+		$httpProvider.defaults.headers.get = {};
+		$httpProvider.defaults.headers.get.redislockkey = redisKey;
+		redisSource = $resource('http://162.243.145.82:3000/node/validateRedisLock', {},{
+			query: {
+				method: 'GET',
+				data: false,
+				headers: {'redislockkey': redisKey}
+			}});
+		return redisSource.get(function(response){
+			//console.log(response);
+		}, function(error){
+			//console.log(error);	
+		}).$promise;
+
+	}
 	fetchBlogs = function(){
 		return blogs;
 	}
@@ -169,8 +312,10 @@ nibbleOnCode.factory('nibbleOnCodeSvc', ['$resource', function($resource){
 	return {
 		getBlogs: getBlogs,
 		getTags: getTags,
+		getTags2: getTags2,
 		fetchBlogs: fetchBlogs,
-		fetchTags: fetchTags
+		fetchTags: fetchTags,
+		validateRedis: validateRedis
 		
 	}
 

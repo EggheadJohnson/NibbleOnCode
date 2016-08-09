@@ -18,7 +18,7 @@ var express = require('express'),
 		.use(function (req, res, next) {
 			res.header('Access-Control-Allow-Origin', '*');
 			res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-			res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,InstitutionID,userId');
+			res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,InstitutionID,userId,redislockkey');
 			if ('OPTIONS' == req.method){
                 res.sendStatus(200);
             }
@@ -59,8 +59,10 @@ var express = require('express'),
 		})
 		.get('/node/validateRedisLock', function(req, res, next){
 			var redis = new ioredis();
-			redis.get(req.headers.redislockkey, function(err, result){
-				if (result) {
+			console.log(req.headers);
+			redis.get('redislockkey', function(err, result){
+				if (result && req.headers.redislockkey === result) {
+					
 					res.status(200).json({
 						msg: "Write permitted"
 					});
@@ -126,6 +128,36 @@ var express = require('express'),
 						});
 					}
 				);
+			})
+		})
+		.get('/node/getTags2', function(req, res, next){
+			var url = config.mongoURL;
+			MongoClient.connect(url, function(err, db){
+				var collection = db.collection('blogs'),
+					tagsArray = [],
+					tagsObject = {};
+			  // Find some documents 
+			  collection.find({}).toArray(function(err, docs) {
+					if (!err) {
+						docs.forEach(function(doc){
+							tagsArray = tagsArray.concat(doc.tags);
+						});
+						tagsArray.forEach(function(tag){
+							if (tagsObject[tag]) tagsObject[tag] += 1;
+							else tagsObject[tag] = 1;
+						})
+
+
+						res.status(200).json({
+							data: tagsObject
+						});
+					}
+					else {
+						res.status(500).json({err: err});
+					}
+					db.close();
+				});
+				
 			})
 		});
 

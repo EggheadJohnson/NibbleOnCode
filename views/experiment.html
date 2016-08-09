@@ -1,0 +1,15 @@
+<div ng-if="!validRedisKey">
+	<form name="myForm">
+		<input type="text" name="redisKey" ng-model="redisKey"></input>
+		<button ng-click="validateRedis(redisKey)">Validate</button>
+	</form>
+</div>
+<div ng-if="validRedisKey">
+	<input type="text" ng-model="runs"></input>
+	<button ng-click="runATest('mongoRes')"> Mongo </button>
+	<p> {{mongoRes}} </p>
+	<button ng-click="runATest('nodeRes')"> Node </button>
+	<p> {{nodeRes}} </p>
+	<button ng-click="runATest('angularRes')"> Angular </button>
+	<p> {{angularRes}} </p>
+</div>
